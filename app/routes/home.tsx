@@ -1,17 +1,27 @@
+import { useNavigate } from "react-router";
 import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
 
 import Navbar from "components/Navbar";
+import Upload from "components/Upload";
 import Button from "components/ui/Button";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Roomify" },
+    { name: "description", content: "Welcome to Roomify!" },
   ];
 }
 
 export default function Home() {
+  const navigate = useNavigate();
+
+  const handleUploadComplete = async (base64Image: string) => {
+    const newId = Date.now().toString();
+    navigate(`/visualizer/${newId}`);
+    return true;
+  };
+
   return (
     <div className="home">
       <Navbar />
@@ -51,10 +61,10 @@ export default function Home() {
               </div>
 
               <h3>Upload your floor plan</h3>
-              <p>Supports JPG, PNG, formats up to 10MB</p>
+              <p>Supports JPG, PNG, formats up to 50MB</p>
             </div>
 
-            <p>upload images</p>
+            <Upload onComplete={handleUploadComplete} />
           </div>
         </div>
       </section>
@@ -72,11 +82,14 @@ export default function Home() {
           </div>
 
           <div className="projects-grid">
-            <div
-              className="project-card group"
-            >
+            <div className="project-card group">
               <div className="preview">
-                <img src={"https://roomify-mlhuk267-dfwu1i.puter.site/projects/1770803585402/rendered.png"} alt="Project" />
+                <img
+                  src={
+                    "https://roomify-mlhuk267-dfwu1i.puter.site/projects/1770803585402/rendered.png"
+                  }
+                  alt="Project"
+                />
 
                 <div className="badge">
                   <span>Community</span>
@@ -89,7 +102,7 @@ export default function Home() {
 
                   <div className="meta">
                     <Clock size={12} />
-                    <span>{new Date('01.01.2017').toLocaleDateString()}</span>
+                    <span>{new Date("01.01.2017").toLocaleDateString()}</span>
                     <span>By JS Mastery</span>
                   </div>
                 </div>
