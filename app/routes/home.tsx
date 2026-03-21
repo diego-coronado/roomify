@@ -1,12 +1,12 @@
-import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
 
 import Navbar from "components/Navbar";
 import Upload from "components/Upload";
 import Button from "components/ui/Button";
 import type { Route } from "./+types/home";
-import { createProject } from "lib/puter.action";
+import { createProject, getProjects } from "lib/puter.action";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -60,6 +60,16 @@ export default function Home() {
       isCreatingProjectRef.current = false;
     }
   };
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const items = await getProjects();
+
+      setProjects(items);
+    };
+
+    fetchProjects();
+  }, []);
 
   return (
     <div className="home">
@@ -143,7 +153,6 @@ export default function Home() {
                       <div className="meta">
                         <Clock size={12} />
                         <span>{new Date(timestamp).toLocaleDateString()}</span>
-                        <span>By JS Mastery</span>
                       </div>
                     </div>
                     <div className="arrow">
