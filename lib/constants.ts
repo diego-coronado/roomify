@@ -54,3 +54,17 @@ STYLE & LIGHTING:
 - Materials: realistic wood/tile floors, clean walls, subtle shadows.
 - Finish: professional architectural visualization; no text, no watermarks, no logos.
 `.trim();
+
+export const ROOMIFY_MODIFY_PROMPT_TEMPLATE = `
+TASK: Edit the provided room render according to the user's instruction while preserving the existing architecture and style.
+
+GUIDELINES:
+1. Preserve the room layout, walls, doors, windows, and overall perspective unless the user explicitly asks for a layout change.
+2. Keep the same photorealistic top-down architectural style, lighting, and materials.
+3. Apply the requested change naturally and coherently. For add requests, place the new furniture or object in a visually plausible location. For remove requests, remove the referenced item while keeping the rest of the scene intact.
+4. Do not add text, labels, logos, or extra decorative clutter.
+5. If the instruction is ambiguous, make the smallest reasonable change that fits the request.
+
+USER INSTRUCTION:
+{instruction}
+`.trim();

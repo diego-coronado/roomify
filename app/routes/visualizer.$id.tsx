@@ -6,8 +6,9 @@ import {
   ReactCompareSliderImage,
 } from "react-compare-slider";
 
-import { generate3DView } from "../../lib/ai.action";
+import { generate3DView, modify3DView } from "../../lib/ai.action";
 import Button from "../../components/ui/Button";
+import ModifyPanel from "../../components/ModifyPanel";
 import { createProject, getProjectById } from "../../lib/puter.action";
 
 const VisualizerId = () => {
@@ -21,6 +22,8 @@ const VisualizerId = () => {
   const [isProjectLoading, setIsProjectLoading] = useState(true);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isModifyOpen, setIsModifyOpen] = useState(false);
+  const [modifyError, setModifyError] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
 
   const handleBack = () => navigate("/");
@@ -35,6 +38,29 @@ const VisualizerId = () => {
     document.body.removeChild(link);
   };
 
+  const persistRender = async (item: DesignItem, renderedImage: string) => {
+    const updatedItem = {
+      ...item,
+      renderedImage,
+      renderedPath: undefined,
+      timestamp: Date.now(),
+      ownerId: item.ownerId ?? userId ?? null,
+      isPublic: item.isPublic ?? false,
+    };
+
+    const saved = await createProject({
+      item: updatedItem,
+      visibility: "private",
+    });
+
+    if (saved) {
+      setProject(saved);
+      setCurrentImage(saved.renderedImage || renderedImage);
+    }
+
+    return saved;
+  };
+
   const runGeneration = async (item: DesignItem) => {
     if (!id || !item.sourceImage) return;
 
@@ -44,28 +70,38 @@ const VisualizerId = () => {
 
       if (result.renderedImage) {
         setCurrentImage(result.renderedImage);
-
-        const updatedItem = {
-          ...item,
-          renderedImage: result.renderedImage,
-          renderedPath: result.renderedPath,
-          timestamp: Date.now(),
-          ownerId: item.ownerId ?? userId ?? null,
-          isPublic: item.isPublic ?? false,
-        };
-
-        const saved = await createProject({
-          item: updatedItem,
-          visibility: "private",
-        });
-
-        if (saved) {
-          setProject(saved);
-          setCurrentImage(saved.renderedImage || result.renderedImage);
-        }
+        await persistRender(item, result.renderedImage);
       }
     } catch (error) {
       console.error("Generation failed: ", error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleModify = async (instruction: string) => {
+    if (!project?.sourceImage) return;
+
+    try {
+      setIsProcessing(true);
+      setModifyError(null);
+      setIsModifyOpen(false);
+
+      const sourceForEdit = currentImage || project.sourceImage;
+      const result = await modify3DView({
+        sourceImage: sourceForEdit,
+        instruction,
+      });
+
+      if (result.renderedImage) {
+        setCurrentImage(result.renderedImage);
+        await persistRender(project, result.renderedImage);
+      }
+    } catch (error) {
+      console.error("Modify failed: ", error);
+      setModifyError(
+        error instanceof Error ? error.message : "Unable to apply the change.",
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -142,6 +178,14 @@ const VisualizerId = () => {
             <div className="panel-actions">
               <Button
                 size="sm"
+                onClick={() => setIsModifyOpen(true)}
+                className="modify"
+                disabled={!currentImage && !project?.sourceImage}
+              >
+                <RefreshCcw className="w-4 h-4 mr-2" /> Modify
+              </Button>
+              <Button
+                size="sm"
                 onClick={handleExport}
                 className="export"
                 disabled={!currentImage}
@@ -174,9 +218,9 @@ const VisualizerId = () => {
               <div className="render-overlay">
                 <div className="rendering-card">
                   <RefreshCcw className="spinner" />
-                  <span className="title">Rendering...</span>
+                  <span className="title">Working on your render</span>
                   <span className="subtitle">
-                    Generating your 3D visualization
+                    {modifyError ? "Please try again." : "Generating or updating your 3D visualization"}
                   </span>
                 </div>
               </div>
@@ -227,6 +271,17 @@ const VisualizerId = () => {
           </div>
         </div>
       </section>
+
+      {modifyError && (
+        <div className="modify-error-banner">{modifyError}</div>
+      )}
+
+      <ModifyPanel
+        isOpen={isModifyOpen}
+        isProcessing={isProcessing}
+        onClose={() => setIsModifyOpen(false)}
+        onSubmit={handleModify}
+      />
     </div>
   );
 };

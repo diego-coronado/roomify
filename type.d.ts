@@ -125,3 +125,14 @@ interface Generate3DViewParams {
   sourceImage: string;
   projectId?: string | null;
 }
+
+interface ModifyRenderParams {
+  sourceImage: string;
+  instruction: string;
+  projectId?: string | null;
+}
+
+interface ModifyRenderResult {
+  renderedImage: string | null;
+  renderedPath?: string;
+}
